@@ -32,18 +32,17 @@ export default {
 
         const byParam = req.body?.by + ""; // to string
         if (!allowedByParams.includes(byParam)) {
-          res.status(400).json({
+          return res.status(400).json({
             error: `Invalid value for param 'by' - must be one of ${allowedByParams.join(
               ", "
             )}`,
           });
-          return;
         }
 
-		// The value to look for
+        // The value to look for
         const identifierParam = (req.body?.identifier || "") + ""; // to string
 
-		// First check that user exists
+        // First check that user exists
         const getRes = await usersService.readByQuery({
           filter: { [byParam]: { _eq: identifierParam } },
           fields: ["id", "email"],
@@ -52,14 +51,13 @@ export default {
 
         const user = getRes[0];
         if (!user) {
-          res.status(404).json({
+          return res.status(404).json({
             error: `User not found.`,
           });
-          return;
         }
 
-		// Delete all records from the session database
-		// that references the user in question
+        // Delete all records from the session database
+        // that references the user in question
         const deleteRes = await database
           .delete()
           .from("directus_sessions")
@@ -68,7 +66,9 @@ export default {
         return res.json(deleteRes);
       } catch (error) {
         logger.error(error, "destroy-session error");
-        res.status(500).json({ error: error.message || "Unknown error" });
+        return res
+          .status(500)
+          .json({ error: error.message || "Unknown error" });
       }
     });
   },
