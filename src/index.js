@@ -16,6 +16,10 @@ const checkPermission = () => async (req, res, next) => {
 // we can assume are unique
 const allowedByParams = ["id", "email", "external_identifier"];
 
+const respond = (res, destroyedCount) => {
+  return res.status(200).json({ destroyedCount });
+};
+
 export default {
   id: "destroy-session",
   handler: (router, { services, logger, getSchema, database }) => {
@@ -51,19 +55,17 @@ export default {
 
         const user = getRes[0];
         if (!user) {
-          return res.status(404).json({
-            error: `User not found.`,
-          });
+          return respond(res, 0);
         }
 
         // Delete all records from the session database
         // that references the user in question
-        const deleteRes = await database
+        const destroyedCount = await database
           .delete()
           .from("directus_sessions")
           .where("user", user.id);
 
-        return res.json(deleteRes);
+        return respond(res, destroyedCount);
       } catch (error) {
         logger.error(error, "destroy-session error");
         return res
