@@ -1,15 +1,28 @@
 const checkPermission = () => async (req, res, next) => {
+  // If no user, return forbidden error
   if (!req.accountability?.user) {
     return res.status(401).send(`Unauthenticated`);
   }
 
-  // TODO support role by env
-
-  if (req.accountability?.admin !== true) {
-    return res.status(403).send(`Forbidden`);
+  // If a role ID is specified in environment,
+  // and current accountability object has
+  // that role, allow proceeding
+  if (
+    process.env.DESTROY_SESSION_PERMITTED_ROLE &&
+    req.accountability.roles.includes(
+      process.env.DESTROY_SESSION_PERMITTED_ROLE
+    )
+  ) {
+    return next();
   }
 
-  return next();
+  // Otherwise, only allow admin
+  if (req.accountability?.admin === true) {
+    return next();
+  }
+
+  // Default to forbidden error
+  return res.status(403).send(`Forbidden`);
 };
 
 // Only allow deleting by properties that
